@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+selenium = "*"
+pyyaml = "*"
+python-telegram-bot = "*"
+pillow = "*"
+openpyxl = "*"
+
+[dev-packages]
+black = "*"
+pylint = "*"
+pretty-errors = "*"
+
+[requires]
+python_version = "3.8"

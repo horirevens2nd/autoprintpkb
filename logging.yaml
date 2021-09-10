@@ -1,0 +1,59 @@
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  default:
+    format: "%(asctime)s %(name)s %(levelname)s : %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+  error:
+    format: "%(levelname)s %(name)s.%(funcName)s() : %(message)s"  
+
+filters:
+  info:
+    (): loggingfilter.InfoFilter  
+  debug:
+    (): loggingfilter.DebugFilter
+      
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: default
+    filters: [debug]
+    stream: ext://sys.stdout
+  info:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: default
+    filename: log/info.log
+    filters: [info]
+    maxBytes: 10485760 # 10MB
+    backupCount: 20
+    encoding: utf8
+  error:
+    class: logging.handlers.RotatingFileHandler
+    level: ERROR
+    formatter: error
+    filename: log/error.log
+    maxBytes: 10485760 # 10MB
+    backupCount: 20
+    encoding: utf8 
+
+loggers:
+  __main__:
+    level: DEBUG
+    handlers: [console, info, error]
+    propagate: no
+  filehandler:
+    level: DEBUG
+    handlers: [console, info, error]
+    propagate: no
+  imagehandler:
+    level: DEBUG
+    handlers: [console, info, error]
+    propagate: no
+
+root:
+  level: NOTSET
+  handlers: [console]
+  propagate: yes
