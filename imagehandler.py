@@ -133,6 +133,7 @@ def edit_notice(filename_source, filepath_source, petugas, waktu, url):
 
 def print_file(filepath):
     os.system(f"lpr -P Epson-L210-Series_AdminSAP {filepath}")
+    # os.system(f"lpr -P L210-Series {filepath}")
     filename = os.path.basename(filepath)
     logger.info("file %s is printed", filename)
 
