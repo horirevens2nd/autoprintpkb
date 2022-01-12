@@ -6,12 +6,21 @@ import logging.config
 import pretty_errors
 import yaml
 
-# init base directories
-names = ["dist", "log"]
-for name in names:
-    path = os.path.join(os.path.dirname(__file__), name)
-    if not os.path.isdir(path):
-        os.mkdir(path)
+OFFICE = "KANTOR POS NGANJUK 64400"
+
+# init directories
+LOG_DIR = "./log"
+DIST_DIR = "./dist"
+ETBPKP_DIR = "./dist/etbpkp"
+ORIGINAL_DIR = "./dist/etbpkp/original"
+EDITED_DIR = "./dist/etbpkp/edited"
+REPORT_DIR = "./dist/report"
+
+dirpaths = [LOG_DIR, DIST_DIR, ETBPKP_DIR, ORIGINAL_DIR, EDITED_DIR, REPORT_DIR]
+for dirpath in dirpaths:
+    if not os.path.isdir(dirpath):
+        os.mkdir(dirpath)
+
 
 # init logger
 with open("logging.yaml", "r") as file:

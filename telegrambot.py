@@ -13,15 +13,14 @@ from telegram.ext import Updater, CommandHandler, Filters, MessageHandler
 import dateformatter
 import main as _
 from filehandler import create_report
-from imagehandler import print_file
 from sqlitehandler import create_connection, create_table, SQL_TABLE_PRINTREQUEST
 
 # get object from secret.yaml
 with open("secret.yaml", "r") as file:
     secret = yaml.load(file, Loader=yaml.FullLoader)
-YOGI = secret["telegram"]["id"]
+SUPERADMIN_ID = secret["telegram"]["id"]
+SUPERADMIN_USERNAME = secret["telegram"]["username"]
 PRINTPKB = secret["telegram"]["tokens"]["printpkb"]
-HORIREVENS = secret["telegram"]["tokens"]["horirevens"]
 USERS = secret["telegram"]["users"]
 ADMINS = secret["telegram"]["admins"]
 
@@ -42,13 +41,48 @@ for admin in ADMINS:
 
 updater = Updater(token=PRINTPKB, use_context=True)
 
+# messages
+UNREGISTERED = (
+    "Anda belum terdaftar. "
+    f"Silakan menghubungi {SUPERADMIN_USERNAME} untuk bisa menggunakan bot ini"
+)
+REGISTERED = (
+    "Anda sudah terdaftar. "
+    "Silakan kirim format SMS dari SAMSATJATIM seperti contoh dibawah ini:\n\n"
+    "Trm kasih pmbyran dan pngsahan STNK AG 1234 ZZ Rp 200.000 "
+    "IDTRANS 231210813579xxx 01-01-2025, IDSAH 5608364030821xxx "
+    "http://jwtim.id/xxxxxx (WA:081131137070)"
+)
+SUPERADMIN_ID_COMMAND = (
+    "*Bot Command*\n"
+    "/getid \- get telelgram ID\n"
+    "/getreport \- get report file\n"
+    "/print \- print edited image\n"
+    "/help \- show this message\n"
+    "/restart \- restart the bot\n"
+    "/stop \- stop the bot"
+)
+ADMIN_COMMAND = (
+    "*Bot Command*\n"
+    "/getid \- get telelgram ID\n"
+    "/getreport \- get report file\n"
+    "/print \- print edited image\n"
+)
+PRINT_INVALID_FORMAT = (
+    "Argumen yang Anda masukan salah. "
+    "Pastikan menggunakan nomor polisi setelah perintah /print\n\n"
+    "contoh:\n"
+    "/print AG 6207 BD"
+)
+RESTRICTED = "Anda tidak memiliki akses untuk menjalankan perintah tersebut"
 
-def send_message(chat_id=YOGI, text="...", parse_mode=None):
+
+def send_message(chat_id=SUPERADMIN_ID, text="...", parse_mode=None):
     """send message to user"""
     updater.bot.send_message(chat_id=chat_id, text=text, parse_mode=parse_mode)
 
 
-def send_document_(chat_id=YOGI, filepath=None, caption=None):
+def send_document_(chat_id=SUPERADMIN_ID, filepath=None, caption=None):
     """send document to user"""
     if os.path.isfile(filepath):
         updater.bot.send_document(
@@ -102,11 +136,7 @@ def read_message(update, context):
             )
             update.message.reply_text(message)
     else:
-        message = (
-            "Anda belum terdaftar. "
-            "Silakan menghubungi @yogitrismayana untuk bisa menggunakan bot ini"
-        )
-        update.message.reply_text(message)
+        update.message.reply_text(UNREGISTERED)
 
 
 def get_report(update, context):
@@ -159,9 +189,7 @@ def get_report(update, context):
             )
             update.message.reply_text(message)
     else:
-        update.message.reply_text(
-            "Anda tidak memiliki akses untuk menjalankan perintah tersebut"
-        )
+        update.message.reply_text(RESTRICTED)
 
 
 def print(update, context):
@@ -169,108 +197,42 @@ def print(update, context):
     chat_id = update.message.chat.id
     if chat_id in registered_admins.keys():
         if len(context.args) == 0:
-            message = (
-                "Argumen yang Anda masukan salah. "
-                "Pastikan menggunakan nomor polisi setelah perintah /print\n\n"
-                "contoh:\n"
-                "/print AG 6207 BD"
-            )
-            update.message.reply_text(message)
+            update.message.reply_text(PRINT_INVALID_FORMAT)
         elif len(context.args) == 3:
             # download, edit and print file
             no_polisi = f"{context.args[0]} {context.args[1]} {context.args[2]}"
             command = f"pipenv-shebang printrequest.py {chat_id} {no_polisi}"
             os.system(command)
         else:
-            message = (
-                "Argumen yang Anda masukan salah. "
-                "Pastikan menggunakan nomor polisi setelah perintah /print\n\n"
-                "contoh:\n"
-                "/print AG 6207 BD"
-            )
-            update.message.reply_text(message)
+            update.message.reply_text(PRINT_INVALID_FORMAT)
     else:
-        update.message.reply_text(
-            "Anda tidak memiliki akses untuk menjalankan perintah tersebut"
-        )
+        update.message.reply_text(RESTRICTED)
 
 
 def start(update, context):
     """send this message"""
     chat_id = update.message.chat.id
-    if chat_id == YOGI:
-        message = (
-            "*Bot Command*\n"
-            "/getid \- get telelgram ID\n"
-            "/getreport \- get report file\n"
-            "/print \- print edited image\n"
-            "/help \- show this message\n"
-            "/restart \- restart the bot\n"
-            "/stop \- stop the bot"
-        )
-        update.message.reply_text(message, parse_mode="MarkdownV2")
+    if chat_id == SUPERADMIN_ID:
+        update.message.reply_text(SUPERADMIN_ID_COMMAND, parse_mode="MarkdownV2")
     elif chat_id in registered_users.keys():
-        message = (
-            "Anda sudah terdaftar. "
-            "Silakan kirim format SMS dari SAMSATJATIM seperti contoh dibawah ini:\n\n"
-            "Trm kasih pmbyran dan pngsahan STNK AG 1234 ZZ Rp 200.000 "
-            "IDTRANS 231210813579xxx 01-01-2025, IDSAH 5608364030821xxx "
-            "http://jwtim.id/xxxxxx (WA:081131137070)"
-        )
-        update.message.reply_text(message)
+        update.message.reply_text(REGISTERED)
     elif chat_id in registered_admins.keys():
-        message = (
-            "*Bot Command*\n"
-            "/getid \- get telelgram ID\n"
-            "/getreport \- get report file\n"
-            "/print \- print edited image\n"
-        )
-        update.message.reply_text(message, parse_mode="MarkdownV2")
+        update.message.reply_text(ADMIN_COMMAND, parse_mode="MarkdownV2")
     else:
-        message = (
-            f"ID Anda adalah {chat_id}. "
-            "Silakan menghubungi @yogitrismayana untuk bisa menggunakan bot ini"
-        )
-        update.message.reply_text(message)
+        update.message.reply_text(UNREGISTERED)
 
 
 def help(update, context):
     """send this message"""
     chat_id = update.message.chat.id
-    if chat_id == YOGI:
-        message = (
-            "*Bot Command*\n"
-            "/getid \- get telelgram ID\n"
-            "/getreport \- get report file\n"
-            "/print \- print edited image\n"
-            "/help \- show this message\n"
-            "/restart \- restart the bot\n"
-            "/stop \- stop the bot"
-        )
-        update.message.reply_text(message, parse_mode="MarkdownV2")
+    if chat_id == SUPERADMIN_ID:
+        update.message.reply_text(SUPERADMIN_ID_COMMAND, parse_mode="MarkdownV2")
     elif chat_id in registered_users.keys():
-        message = (
-            "Anda sudah terdaftar. "
-            "Silakan kirim format SMS dari SAMSATJATIM seperti contoh dibawah ini:\n\n"
-            "Trm kasih pmbyran dan pngsahan STNK AG 1234 ZZ Rp 200.000 "
-            "IDTRANS 231210813579xxx 01-01-2025, IDSAH 5608364030821xxx "
-            "http://jwtim.id/xxxxxx (WA:081131137070)"
-        )
-        update.message.reply_text(message)
+        update.message.reply_text(REGISTERED)
     elif chat_id in registered_admins.keys():
-        message = (
-            "*Bot Command*\n"
-            "/getid \- get telelgram ID\n"
-            "/getreport \- get report file\n"
-            "/print \- print edited image\n"
-        )
-        update.message.reply_text(message, parse_mode="MarkdownV2")
+        update.message.reply_text(ADMIN_COMMAND, parse_mode="MarkdownV2")
     else:
-        message = (
-            f"ID Anda adalah {chat_id}. "
-            "Silakan menghubungi @yogitrismayana untuk bisa menggunakan bot ini"
-        )
-        update.message.reply_text(message)
+        update.message.reply_text(UNREGISTERED)
 
 
 def get_id(update, context):
@@ -281,7 +243,7 @@ def get_id(update, context):
     # last_name = f" {last_name}" if last_name is not None else ""
     message = (
         f"ID Anda adalah {chat_id}. "
-        "Silakan menghubungi @yogitrismayana untuk bisa menggunakan bot ini"
+        f"Silakan menghubungi {SUPERADMIN_USERNAME} untuk bisa menggunakan bot ini"
     )
     update.message.reply_text(message)
 
@@ -315,7 +277,7 @@ def unknown(update, context):
 
 def main():
     # filtered users
-    yogitrismayana = Filters.user(username="@yogitrismayana")
+    superadmin = Filters.user(username=SUPERADMIN_USERNAME)
 
     # init handler
     getid_handler = CommandHandler("getid", get_id)
@@ -323,8 +285,8 @@ def main():
     print_handler = CommandHandler("print", print)
     start_handler = CommandHandler("start", start)
     help_handler = CommandHandler("help", help)
-    restart_handler = CommandHandler("restart", restart, filters=yogitrismayana)
-    stop_handler = CommandHandler("stop", stop, filters=yogitrismayana)
+    restart_handler = CommandHandler("restart", restart, filters=superadmin)
+    stop_handler = CommandHandler("stop", stop, filters=superadmin)
     read_message_handler = MessageHandler(
         Filters.text & (~Filters.command), read_message
     )
@@ -343,7 +305,7 @@ def main():
     dispatcher.add_handler(unknown_handler)
 
     # start the bot
-    updater.bot.send_message(chat_id=YOGI, text="Bot is starting...")
+    updater.bot.send_message(chat_id=SUPERADMIN_ID, text="Bot is starting...")
     updater.start_polling()
     updater.idle()
 

@@ -6,32 +6,11 @@ import logging
 import logging.config
 
 import pretty_errors
-import yaml
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import NamedStyle, Font, Alignment, numbers
 
 import main as _
 from sqlitehandler import create_connection, fetch_all
-
-
-def create_dirs(dirnames):
-    new_dirnames = []
-    for dirname in dirnames:
-        dirpath = os.path.join(os.path.dirname(__file__), dirname)
-        if not os.path.isdir(dirpath):
-            os.mkdir(dirpath)
-        new_dirnames.append(dirpath)
-    return new_dirnames
-
-
-def create_subdirs(base_dirpath, dirnames):
-    new_dirnames = []
-    for dirname in dirnames:
-        dirpath = os.path.join(base_dirpath, dirname)
-        if not os.path.isdir(dirpath):
-            os.mkdir(dirpath)
-        new_dirnames.append(dirpath)
-    return new_dirnames
 
 
 def create_report(today):
@@ -48,9 +27,7 @@ def create_report(today):
     if conn is not None:
         today2 = today.replace("-", "")
         filename = f"{today2}_report.xlsx"
-        dist_dirpath = create_dirs(["dist"])
-        report_dirpath = create_subdirs(dist_dirpath[0], ["report"])
-        filepath = os.path.join(report_dirpath[0], filename)
+        filepath = os.path.join(_.REPORT_DIR, filename)
 
         contents = fetch_all(conn, sql, params)
         contents2 = fetch_all(conn, sql2, params)
@@ -95,7 +72,7 @@ def create_report(today):
             # set header title
             ws["A1"] = "PT POS INDONESIA (PERSERO)"
             ws["A1"].font = Font(name="Calibri", size=10)
-            ws["A2"] = "KANTOR POS NGANJUK 64400"
+            ws["A2"] = _.OFFICE
             ws["A2"].font = Font(name="Calibri", size=10)
             ws["A3"] = "LAPORAN CETAK PKB"
             ws["A3"].font = Font(bold=True)

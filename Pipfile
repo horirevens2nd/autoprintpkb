@@ -4,11 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-selenium = "*"
 pyyaml = "*"
 python-telegram-bot = "*"
 pillow = "*"
 openpyxl = "*"
+pdf2image = "*"
 
 [dev-packages]
 black = "*"
